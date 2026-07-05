@@ -155,6 +155,14 @@ export const STAFF_DESIGNATION_LABELS: Record<StaffDesignation, string> = {
   ACCOUNTANT: "Accountant",
 }
 
+export const STAFF_DESIGNATION_COLORS: Record<StaffDesignation, string> = {
+  ADMIN: "bg-purple-100 text-purple-800",
+  TEACHER: "bg-blue-100 text-blue-800",
+  COUNSELOR: "bg-orange-100 text-orange-800",
+  RECEPTION: "bg-green-100 text-green-800",
+  ACCOUNTANT: "bg-yellow-100 text-yellow-800",
+}
+
 // ==========================================
 // STAFF STATUS
 // ==========================================
