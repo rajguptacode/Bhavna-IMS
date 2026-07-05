@@ -1,10 +1,8 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./prisma"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma as never),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -30,8 +28,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-        // In production, verify password with bcrypt/argon2
-        // For now, return user object
         return {
           id: user.id,
           email: user.email,
