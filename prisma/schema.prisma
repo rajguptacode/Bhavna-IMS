@@ -1,0 +1,347 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// AUTH MODULE
+// ==========================================
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  roleId       String    @db.Uuid
+  fullName     String
+  email        String    @unique
+  mobile       String?
+  passwordHash String
+  isActive     Boolean   @default(true)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  role         Role      @relation(fields: [roleId], references: [id])
+  leadActivities LeadActivity[] @relation("ActivityCreator")
+
+  @@index([roleId])
+  @@map("users")
+}
+
+// ==========================================
+// STUDENT MODULE
+// ==========================================
+
+model Student {
+  id             String       @id @default(uuid()) @db.Uuid
+  studentCode    String       @unique
+  fullName       String
+  fatherName     String?
+  motherName     String?
+  mobile         String
+  email          String?
+  gender         String?
+  dob            DateTime?
+  address        String?
+  city           String?
+  state          String?
+  pincode        String?
+  admissionDate  DateTime     @default(now())
+  photoUrl       String?
+  status         StudentStatus @default(ACTIVE)
+  remarks        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  enrollments    Enrollment[]
+  attendances    Attendance[]
+  payments       Payment[]
+
+  @@index([studentCode])
+  @@index([mobile])
+  @@index([admissionDate])
+  @@map("students")
+}
+
+enum StudentStatus {
+  ACTIVE
+  COMPLETED
+  INACTIVE
+  DROPPED
+  ALUMNI
+}
+
+// ==========================================
+// COURSE MODULE
+// ==========================================
+
+model Course {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseCode  String   @unique
+  name        String
+  description String?
+  duration    Int
+  durationType DurationType
+  fees        Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  batches     Batch[]
+  enrollments Enrollment[]
+  feeStructure FeeStructure?
+
+  @@map("courses")
+}
+
+enum DurationType {
+  DAYS
+  WEEKS
+  MONTHS
+}
+
+// ==========================================
+// BATCH MODULE
+// ==========================================
+
+model Batch {
+  id          String   @id @default(uuid()) @db.Uuid
+  batchCode   String   @unique
+  batchName   String
+  courseId     String   @db.Uuid
+  trainerId   String?  @db.Uuid
+  startDate   DateTime
+  endDate     DateTime?
+  capacity    Int
+  classroom   String?
+  status      BatchStatus @default(UPCOMING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  course      Course   @relation(fields: [courseId], references: [id])
+  trainer     Staff?   @relation(fields: [trainerId], references: [id])
+  enrollments Enrollment[]
+  attendances Attendance[]
+
+  @@index([courseId])
+  @@index([trainerId])
+  @@map("batches")
+}
+
+enum BatchStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// ==========================================
+// ENROLLMENT MODULE
+// ==========================================
+
+model Enrollment {
+  id             String           @id @default(uuid()) @db.Uuid
+  studentId      String           @db.Uuid
+  courseId        String           @db.Uuid
+  batchId        String           @db.Uuid
+  enrollmentDate DateTime         @default(now())
+  completionDate DateTime?
+  status         EnrollmentStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  student        Student          @relation(fields: [studentId], references: [id])
+  course         Course           @relation(fields: [courseId], references: [id])
+  batch          Batch            @relation(fields: [batchId], references: [id])
+  payments       Payment[]
+
+  @@index([studentId])
+  @@index([courseId])
+  @@index([batchId])
+  @@map("enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+// ==========================================
+// STAFF MODULE
+// ==========================================
+
+model Staff {
+  id            String   @id @default(uuid()) @db.Uuid
+  employeeCode  String   @unique
+  fullName      String
+  designation   StaffDesignation
+  mobile        String
+  email         String?
+  joiningDate   DateTime
+  salary        Float?
+  status        StaffStatus @default(ACTIVE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  batches       Batch[]
+
+  @@index([employeeCode])
+  @@map("staff")
+}
+
+enum StaffDesignation {
+  TEACHER
+  COUNSELOR
+  RECEPTION
+  ACCOUNTANT
+  ADMIN
+}
+
+enum StaffStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ==========================================
+// FEE MANAGEMENT
+// ==========================================
+
+model FeeStructure {
+  id                  String   @id @default(uuid()) @db.Uuid
+  courseId            String   @unique @db.Uuid
+  totalFee            Float
+  registrationFee     Float?
+  installmentAllowed  Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  course              Course   @relation(fields: [courseId], references: [id])
+}
+
+model Payment {
+  id                   String   @id @default(uuid()) @db.Uuid
+  studentId            String   @db.Uuid
+  enrollmentId         String   @db.Uuid
+  amount               Float
+  paymentDate          DateTime @default(now())
+  paymentMode          PaymentMode
+  transactionReference String?
+  remarks              String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  student              Student  @relation(fields: [studentId], references: [id])
+  enrollment           Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@index([studentId])
+  @@index([paymentDate])
+  @@map("payments")
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CARD
+}
+
+// ==========================================
+// ATTENDANCE MODULE
+// ==========================================
+
+model Attendance {
+  id              String           @id @default(uuid()) @db.Uuid
+  studentId       String           @db.Uuid
+  batchId         String           @db.Uuid
+  attendanceDate  DateTime         @db.Date
+  status          AttendanceStatus
+  remarks         String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  student         Student          @relation(fields: [studentId], references: [id])
+  batch           Batch            @relation(fields: [batchId], references: [id])
+
+  @@unique([studentId, attendanceDate])
+  @@index([batchId])
+  @@index([attendanceDate])
+  @@map("attendance")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+  LATE
+}
+
+// ==========================================
+// LEAD CRM
+// ==========================================
+
+model Lead {
+  id          String         @id @default(uuid()) @db.Uuid
+  leadCode    String         @unique
+  fullName    String
+  mobile      String
+  email       String?
+  source      LeadSource
+  status      LeadStatus     @default(NEW)
+  assignedTo  String?
+  remarks     String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  activities  LeadActivity[]
+
+  @@index([leadCode])
+  @@index([status])
+  @@map("leads")
+}
+
+enum LeadSource {
+  WEBSITE
+  WALK_IN
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  REFERRAL
+  CALL
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  DEMO_SCHEDULED
+  ADMISSION_PENDING
+  CONVERTED
+  LOST
+}
+
+model LeadActivity {
+  id             String       @id @default(uuid()) @db.Uuid
+  leadId         String       @db.Uuid
+  activityType   ActivityType
+  notes          String?
+  nextFollowUp   DateTime?
+  createdBy      String?      @db.Uuid
+  createdAt      DateTime     @default(now())
+  lead           Lead         @relation(fields: [leadId], references: [id])
+  creator        User?        @relation("ActivityCreator", fields: [createdBy], references: [id])
+
+  @@index([leadId])
+  @@map("lead_activities")
+}
+
+enum ActivityType {
+  CALL
+  WHATSAPP
+  VISIT
+  DEMO
+  EMAIL
+}

@@ -7,6 +7,7 @@ node_modules/
 build/
 dist/
 out/
+.next/
 
 # Environment
 .env
@@ -38,3 +39,5 @@ coverage/
 # Misc
 *.log
 .cache/
+
+/src/generated/prisma
