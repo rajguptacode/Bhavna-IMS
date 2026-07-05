@@ -29,15 +29,20 @@ Institute Management System for Bhavna Institute - digitizing admissions, studen
 
 | Document | Description |
 |----------|-------------|
-| [Tech Stack](docs/TECH_STACK.md) | Complete tech stack & project structure |
 | [PRD](prd.md) | Product Requirements Document |
 | [Database Design](ddd.md) | Database schema & design |
 | [ER Diagram](er.md) | Entity relationships |
-| [API Routes](docs/API.md) | Server actions & API patterns |
+| [Security & RBAC](docs/security.md) | Roles, permissions, security rules |
+| [API Specification](docs/api.md) | 38 MVP API endpoints |
+| [Tech Stack](docs/TECH_STACK.md) | Complete tech stack |
 | [Components](docs/COMPONENTS.md) | UI components guide |
 | [Agents](docs/AGENTS.md) | AI agent definitions |
 | [Skills](docs/SKILLS.md) | Development workflows |
 | [Phases](docs/PHASES.md) | Development roadmap |
+| [Data Dictionary](docs/data%20directory.md) | Field standards v1 |
+| [Data Dictionary v2](docs/data%20directoryv2.md) | Field standards v2 |
+| [Frontend](docs/frontend.md) | Frontend architecture |
+| [UI Specification](docs/ui.md) | UI component specs |
 
 ## Getting Started
 
@@ -68,6 +73,16 @@ npx prisma studio
 # Seed database
 npx prisma db seed
 ```
+
+## User Roles
+
+| Role | Permissions |
+|------|-------------|
+| Admin | Full access to all modules |
+| Reception | Students, Fees, Leads |
+| Counselor | Leads only |
+| Teacher | Attendance only |
+| Accountant | Fees only |
 
 ## Project Structure
 

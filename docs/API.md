@@ -1,93 +1,316 @@
-# Bhavna Institute IMS - API Routes & Server Actions
+# Bhavna Institute IMS - API Specification v1.0
 
-## Authentication
+## Overview
 
-### Auth.js Routes (Auto-generated)
-- `POST /api/auth/signin` - Sign in
-- `POST /api/auth/signout` - Sign out
-- `GET /api/auth/session` - Get session
+Base URL: `/api/v1`
+Authentication: JWT Session Authentication
+Content Type: `application/json`
 
----
-
-## Server Actions
-
-All mutations use Next.js Server Actions. Located in `src/actions/`.
-
-### Student Actions
-- `createStudent(data)` - Create new student
-- `updateStudent(id, data)` - Update student
-- `getStudent(id)` - Get student by ID
-- `getStudents(filters)` - Get all students with filters
-- `deleteStudent(id)` - Soft delete (set status INACTIVE)
-- `getStudentStats()` - Get student counts by status
-
-### Course Actions
-- `createCourse(data)` - Create new course
-- `updateCourse(id, data)` - Update course
-- `getCourses()` - Get all active courses
-- `getCourse(id)` - Get course with fee structure
-- `deleteCourse(id)` - Soft delete
-
-### Batch Actions
-- `createBatch(data)` - Create new batch
-- `updateBatch(id, data)` - Update batch
-- `getBatches(filters)` - Get all batches with filters
-- `getBatch(id)` - Get batch with enrolled students
-- `assignStudentToBatch(batchId, studentId)` - Enroll student
-- `removeStudentFromBatch(batchId, studentId)` - Remove enrollment
-
-### Fee Actions
-- `createFeeStructure(data)` - Create fee plan for course
-- `recordPayment(data)` - Record fee payment
-- `getPayments(studentId?)` - Get all payments
-- `getPendingFees(studentId?)` - Get pending fee amounts
-- `getFeeStats()` - Total revenue, pending, collected
-
-### Attendance Actions
-- `markAttendance(data)` - Mark daily attendance
-- `getAttendance(batchId, date)` - Get attendance for batch/date
-- `getAttendanceReport(studentId, month, year)` - Monthly report
-- `getAttendanceStats(batchId)` - Attendance percentages
-
-### Lead Actions
-- `createLead(data)` - Create new lead
-- `updateLead(id, data)` - Update lead status/info
-- `addLeadActivity(leadId, data)` - Add follow-up activity
-- `getLeads(filters)` - Get all leads with filters
-- `convertLeadToStudent(leadId)` - Convert lead to student
-- `getLeadStats()` - Pipeline counts, conversion rate
-
-### Staff Actions
-- `createStaff(data)` - Add new staff
-- `updateStaff(id, data)` - Update staff info
-- `getStaff(filters)` - Get all staff
-- `getStaff(id)` - Get staff detail
-- `deleteStaff(id)` - Soft delete
-
-### Dashboard Actions
-- `getDashboardStats()` - All dashboard metrics
-- `getRecentActivity()` - Recent activities feed
-- `getRevenueChart(period)` - Revenue data for charts
-- `getAdmissionChart(period)` - Admission trends
+**Total MVP APIs: 38**
 
 ---
 
-## Data Fetching Patterns
+## Authentication APIs (3)
 
-### Server Components (Default)
-```typescript
-// Direct Prisma queries in server components
-import { prisma } from '@/lib/prisma'
-
-export default async function StudentsPage() {
-  const students = await prisma.student.findMany()
-  return <StudentsTable data={students} />
+### POST /auth/login
+**Purpose:** Authenticate user
+**Permissions:** Public
+**Request:**
+```json
+{
+  "email": "admin@bhavnaims.com",
+  "password": "password"
+}
+```
+**Response:**
+```json
+{
+  "success": true,
+  "token": "jwt-token",
+  "user": {}
 }
 ```
 
-### Server Actions (Mutations)
+### POST /auth/logout
+**Purpose:** End current session
+**Permissions:** Authenticated Users
+
+### GET /auth/me
+**Purpose:** Get logged in user
+**Permissions:** Authenticated Users
+
+---
+
+## Student Module (5 APIs)
+
+### GET /students
+**Purpose:** Fetch all students
+**Permissions:** Admin, Reception, Teacher
+**Filters:** ?page= ?limit= ?search= ?status=
+**Response:**
+```json
+{
+  "data": [],
+  "total": 0
+}
+```
+
+### GET /students/:id
+**Purpose:** Fetch student details
+**Permissions:** Admin, Reception, Teacher
+
+### POST /students
+**Purpose:** Create student record
+**Permissions:** Admin, Reception
+**Request:**
+```json
+{
+  "fullName": "",
+  "mobile": "",
+  "courseId": "",
+  "batchId": ""
+}
+```
+
+### PATCH /students/:id
+**Purpose:** Update student
+**Permissions:** Admin, Reception
+
+### DELETE /students/:id
+**Purpose:** Soft delete student
+**Permissions:** Admin
+
+---
+
+## Course Module (4 APIs)
+
+### GET /courses
+**Purpose:** Get all courses
+**Permissions:** All Authenticated Users
+
+### POST /courses
+**Purpose:** Create course
+**Permissions:** Admin
+
+### PATCH /courses/:id
+**Purpose:** Update course
+**Permissions:** Admin
+
+### DELETE /courses/:id
+**Purpose:** Delete course
+**Permissions:** Admin
+
+---
+
+## Batch Module (4 APIs)
+
+### GET /batches
+**Purpose:** Get all batches
+**Permissions:** All Authenticated Users
+
+### POST /batches
+**Purpose:** Create batch
+**Permissions:** Admin
+
+### PATCH /batches/:id
+**Purpose:** Update batch
+**Permissions:** Admin
+
+### POST /batches/:id/students
+**Purpose:** Assign student to batch
+**Permissions:** Admin, Reception
+**Request:**
+```json
+{
+  "studentId": ""
+}
+```
+
+---
+
+## Enrollment Module (2 APIs)
+
+### POST /enrollments
+**Purpose:** Enroll student into course
+**Permissions:** Admin, Reception
+
+### GET /enrollments/:id
+**Purpose:** Get enrollment details
+**Permissions:** Admin, Reception
+
+---
+
+## Attendance Module (3 APIs)
+
+### POST /attendance
+**Purpose:** Mark attendance
+**Permissions:** Teacher, Admin
+**Request:**
+```json
+{
+  "studentId": "",
+  "batchId": "",
+  "status": "Present"
+}
+```
+
+### GET /attendance
+**Purpose:** Get attendance records
+**Permissions:** Teacher, Admin, Reception
+**Filters:** ?date= ?batch= ?student=
+
+### GET /attendance/report
+**Purpose:** Monthly attendance report
+**Permissions:** Teacher, Admin
+
+---
+
+## Fee Module (4 APIs)
+
+### GET /fees
+**Purpose:** Fee dashboard
+**Permissions:** Admin, Accountant, Reception
+
+### POST /payments
+**Purpose:** Record payment
+**Permissions:** Admin, Accountant, Reception
+**Request:**
+```json
+{
+  "studentId": "",
+  "amount": 5000,
+  "paymentMode": "UPI"
+}
+```
+
+### GET /payments/student/:studentId
+**Purpose:** Student payment history
+**Permissions:** Admin, Accountant, Reception
+
+### GET /fees/pending
+**Purpose:** Pending fees
+**Permissions:** Admin, Accountant
+
+---
+
+## Lead CRM (5 APIs)
+
+### GET /leads
+**Purpose:** Get all leads
+**Permissions:** Admin, Counselor, Reception
+**Filters:** ?status= ?source=
+
+### POST /leads
+**Purpose:** Create lead
+**Permissions:** Admin, Counselor, Reception
+
+### PATCH /leads/:id
+**Purpose:** Update lead
+**Permissions:** Admin, Counselor
+
+### POST /leads/:id/activity
+**Purpose:** Add lead activity
+**Permissions:** Admin, Counselor
+**Request:**
+```json
+{
+  "activityType": "Call",
+  "notes": "Interested in DCA"
+}
+```
+
+### POST /leads/:id/convert
+**Purpose:** Convert lead to student
+**Permissions:** Admin, Counselor
+**System Actions:**
+1. Create Student
+2. Create Enrollment
+3. Update Lead Status = Converted
+
+---
+
+## Staff Module (3 APIs)
+
+### GET /staff
+**Purpose:** Get all staff
+**Permissions:** Admin
+
+### POST /staff
+**Purpose:** Create staff
+**Permissions:** Admin
+
+### PATCH /staff/:id
+**Purpose:** Update staff
+**Permissions:** Admin
+
+---
+
+## Reports Module (4 APIs)
+
+### GET /reports/students
+**Purpose:** Student report
+**Permissions:** Admin
+
+### GET /reports/fees
+**Purpose:** Fee report
+**Permissions:** Admin, Accountant
+
+### GET /reports/attendance
+**Purpose:** Attendance report
+**Permissions:** Admin, Teacher
+
+### GET /reports/admissions
+**Purpose:** Admission report
+**Permissions:** Admin
+
+---
+
+## Dashboard API (1)
+
+### GET /dashboard
+**Purpose:** Dashboard overview
+**Permissions:** All Authenticated Users
+**Response:**
+```json
+{
+  "totalStudents": 0,
+  "activeStudents": 0,
+  "todayAdmissions": 0,
+  "pendingFees": 0,
+  "newLeads": 0,
+  "todayRevenue": 0
+}
+```
+
+---
+
+## Validation Rules
+
+- Student Mobile: Must be unique
+- Course Code: Must be unique
+- Batch Code: Must be unique
+- Attendance: One record per student per day
+- Payments: Amount must be > 0
+
+---
+
+## Error Format
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": []
+}
+```
+
+---
+
+## Server Actions (Alternative to API Routes)
+
+Instead of REST APIs, use Next.js Server Actions:
+
 ```typescript
-// src/actions/student.actions.ts
 'use server'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
@@ -99,59 +322,8 @@ export async function createStudent(data: StudentInput) {
 }
 ```
 
-### Client Components (Interactive)
-```typescript
-'use client'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-```
-
----
-
-## Validation Rules (Zod)
-
-### Student
-- fullName: string, min 2 chars
-- mobile: string, 10 digits
-- email: email format (optional)
-- studentCode: auto-generated (STU-YYYY-XXXX)
-
-### Course
-- name: string, required
-- courseCode: auto-generated (CRS-XXXX)
-- fees: positive number
-- duration: positive integer
-
-### Payment
-- amount: positive number
-- paymentMode: CASH | UPI | BANK_TRANSFER | CARD
-
-### Lead
-- fullName: string, required
-- mobile: string, 10 digits
-- source: LeadSource enum value
-
----
-
-## Error Handling Pattern
-
-```typescript
-// Server Action with error handling
-export async function createStudent(data: StudentInput) {
-  try {
-    // Validate
-    const validated = studentSchema.parse(data)
-    
-    // Create
-    const student = await prisma.student.create({ data: validated })
-    
-    revalidatePath('/students')
-    return { success: true, data: student }
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, errors: error.errors }
-    }
-    return { success: false, message: 'Failed to create student' }
-  }
-}
-```
+**Benefits:**
+- No separate API routes needed
+- Type-safe
+- Simpler code
+- Automatic cache revalidation

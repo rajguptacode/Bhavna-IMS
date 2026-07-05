@@ -27,7 +27,7 @@ model User {
   roleId       String    @db.Uuid
   fullName     String
   email        String    @unique
-  mobile       String?
+  mobile       String?   @unique
   passwordHash String
   isActive     Boolean   @default(true)
   lastLogin    DateTime?
@@ -35,6 +35,7 @@ model User {
   updatedAt    DateTime  @updatedAt
   role         Role      @relation(fields: [roleId], references: [id])
   leadActivities LeadActivity[] @relation("ActivityCreator")
+  auditLogs    AuditLog[]
 
   @@index([roleId])
   @@map("users")
@@ -50,9 +51,9 @@ model Student {
   fullName       String
   fatherName     String?
   motherName     String?
-  mobile         String
+  mobile         String       @unique
   email          String?
-  gender         String?
+  gender         Gender?
   dob            DateTime?
   address        String?
   city           String?
@@ -72,6 +73,12 @@ model Student {
   @@index([mobile])
   @@index([admissionDate])
   @@map("students")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
 enum StudentStatus {
@@ -173,6 +180,7 @@ enum EnrollmentStatus {
   ACTIVE
   COMPLETED
   DROPPED
+  TRANSFERRED
 }
 
 // ==========================================
@@ -184,8 +192,8 @@ model Staff {
   employeeCode  String   @unique
   fullName      String
   designation   StaffDesignation
-  mobile        String
-  email         String?
+  mobile        String   @unique
+  email         String?  @unique
   joiningDate   DateTime
   salary        Float?
   status        StaffStatus @default(ACTIVE)
@@ -198,16 +206,18 @@ model Staff {
 }
 
 enum StaffDesignation {
+  ADMIN
   TEACHER
   COUNSELOR
   RECEPTION
   ACCOUNTANT
-  ADMIN
 }
 
 enum StaffStatus {
   ACTIVE
   INACTIVE
+  RESIGNED
+  TERMINATED
 }
 
 // ==========================================
@@ -217,9 +227,10 @@ enum StaffStatus {
 model FeeStructure {
   id                  String   @id @default(uuid()) @db.Uuid
   courseId            String   @unique @db.Uuid
-  totalFee            Float
-  registrationFee     Float?
+  registrationFee     Float
+  courseFee           Float
   installmentAllowed  Boolean  @default(false)
+  installmentCount    Int?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   course              Course   @relation(fields: [courseId], references: [id])
@@ -234,6 +245,7 @@ model Payment {
   paymentMode          PaymentMode
   transactionReference String?
   remarks              String?
+  collectedBy          String?  @db.Uuid
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   student              Student  @relation(fields: [studentId], references: [id])
@@ -249,6 +261,7 @@ enum PaymentMode {
   UPI
   BANK_TRANSFER
   CARD
+  CHEQUE
 }
 
 // ==========================================
@@ -311,6 +324,7 @@ enum LeadSource {
   INSTAGRAM
   REFERRAL
   CALL
+  OTHER
 }
 
 enum LeadStatus {
@@ -327,12 +341,12 @@ model LeadActivity {
   id             String       @id @default(uuid()) @db.Uuid
   leadId         String       @db.Uuid
   activityType   ActivityType
-  notes          String?
+  notes          String
   nextFollowUp   DateTime?
-  createdBy      String?      @db.Uuid
+  createdBy      String       @db.Uuid
   createdAt      DateTime     @default(now())
   lead           Lead         @relation(fields: [leadId], references: [id])
-  creator        User?        @relation("ActivityCreator", fields: [createdBy], references: [id])
+  creator        User         @relation("ActivityCreator", fields: [createdBy], references: [id])
 
   @@index([leadId])
   @@map("lead_activities")
@@ -341,7 +355,31 @@ model LeadActivity {
 enum ActivityType {
   CALL
   WHATSAPP
+  EMAIL
   VISIT
   DEMO
-  EMAIL
+  MEETING
+  OTHER
+}
+
+// ==========================================
+// AUDIT LOG MODULE
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  action    String
+  module    String
+  recordId  String?
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([module])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
